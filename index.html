@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Show Caller">
+<meta name="theme-color" content="#0b0d10">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="styles.css">
+<title>Show Caller</title>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div id="title"><span id="oa"></span> <span id="cname"></span></div>
+    <div id="sub"><span id="pos"></span><span id="runningNote"></span></div>
+    <span id="wakeDot" title="Screen stays on"></span>
+    <button id="menuBtn" aria-label="Menu">&#9776;</button>
+  </header>
+  <main id="songs"></main>
+</div>
+
+<nav id="cues">
+  <button data-cue="0"></button>
+  <button data-cue="1"></button>
+  <button data-cue="2"></button>
+  <button data-cue="3"></button>
+</nav>
+
+<div id="menu" class="overlay" hidden>
+  <div class="panel">
+    <div class="row between">
+      <h2>Show Caller</h2>
+      <button id="closeMenu" class="ghost">Done</button>
+    </div>
+
+    <div class="label">Today's contest</div>
+    <div class="seg" id="typeSeg">
+      <button data-type="Chorus">Chorus</button>
+      <button data-type="Quartet">Quartet</button>
+    </div>
+
+    <button id="syncBtn" class="primary">Sync from Google Sheet</button>
+    <div id="syncStatus" class="muted"></div>
+
+    <div class="label">Jump to</div>
+    <ol id="jumpList"></ol>
+
+    <details>
+      <summary>Settings</summary>
+      <label>Google Sheet link<input id="sheetUrl" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <label>Tab name<input id="tabName" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <button id="clearTimers" class="ghost wide">Reset all song timers</button>
+    </details>
+
+    <div id="wakeStatus" class="muted"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
