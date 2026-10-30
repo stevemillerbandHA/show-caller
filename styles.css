@@ -80,6 +80,8 @@ main.bump { animation: bump .2s ease-out; }
 .song-head { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
 .song-title { font-size: 22px; font-weight: 650; margin: 4px 0 12px; line-height: 1.25; }
 .song.warn .song-title, .song.warn .clock { color: var(--alert); }
+.light { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; font-size: 16px; color: var(--text); }
+.swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .35); flex: none; }
 
 .controls { display: flex; align-items: center; gap: 10px; }
 .go {

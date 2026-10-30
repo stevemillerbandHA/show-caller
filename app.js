@@ -133,6 +133,18 @@ function cueLabels() {
   return [S.type + ' Backstage', S.type + ' Loaded', 'MC Ready', 'Judges Ready'];
 }
 
+// Swatches for the lighting choices on the cue sheet. Unknown names show without a swatch.
+const LIGHT_COLORS = {
+  red: '#e53935', lavender: '#b39ddb', blue: '#1e66f5', amber: '#ffb300', magenta: '#d81b91',
+  green: '#2e9d4f', turquoise: '#1cc6c0', 'light pink': '#f8b4cc', yellow: '#ffe14d', white: '#ffffff',
+};
+
+function lightChip(name) {
+  const swatch = LIGHT_COLORS[name.toLowerCase().replace(/\s+/g, ' ')];
+  return '<div class="light">' + (swatch ? '<span class="swatch" style="background:' + swatch + '"></span>' : '') +
+    'Lighting: ' + esc(name) + '</div>';
+}
+
 function render(anim) {
   const L = list();
   if (S.idx >= L.length) S.idx = Math.max(0, L.length - 1);
@@ -151,6 +163,7 @@ function render(anim) {
       '<section class="song" data-i="' + i + '">' +
         '<div class="song-head">Song ' + (i + 1) + ' · Length ' + (song.len ? fmt(song.len) : 'not set') + '</div>' +
         '<div class="song-title">' + esc(song.title) + '</div>' +
+        (song.light ? lightChip(song.light) : '') +
         '<div class="controls">' +
           '<button class="go">Start</button>' +
           '<div class="clock"></div>' +
@@ -428,7 +441,9 @@ function parseSheet(text) {
     if (sm) {
       const n = Number(sm[1]);
       songCols[n] = songCols[n] || {};
-      if (/length|time|dur/.test(h)) songCols[n].len = i; else songCols[n].title = i;
+      if (/light/.test(h)) songCols[n].light = i;
+      else if (/length|time|dur/.test(h)) songCols[n].len = i;
+      else songCols[n].title = i;
     } else if (typeCol < 0 && /^(type|contest|division)/.test(h)) typeCol = i;
     else if (orderCol < 0 && /order|appearance|^#$|^oa$/.test(h)) orderCol = i;
     else if (nameCol < 0 && /name|chorus|quartet|competitor|group/.test(h)) nameCol = i;
@@ -447,7 +462,8 @@ function parseSheet(text) {
       const col = songCols[n];
       const title = col.title !== undefined ? (r[col.title] || '').trim() : '';
       const len = col.len !== undefined ? parseLen(r[col.len]) : 0;
-      if (title || len) songs.push({ title: title || 'Song ' + n, len });
+      const light = col.light !== undefined ? (r[col.light] || '').trim() : '';
+      if (title || len) songs.push({ title: title || 'Song ' + n, len, light });
     });
     out[type].push({ order: orderRaw || String(ri + 1), name, songs });
   });

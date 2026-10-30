@@ -6,15 +6,16 @@ Offline contest run sheet for calling the show from an iPhone. It is a web app y
 
 One row per competitor. Row 1 is the header row (already filled in):
 
-| Type | Order | Name | Song 1 Title | Song 1 Length | Song 2 Title | Song 2 Length | … up to Song 20 |
+| Type | Order | Name | Song 1 Title | Song 1 Length | Song 1 Lighting | Song 2 Title | … up to Song 20 |
 |---|---|---|---|---|---|---|---|
-| Chorus | 1 | Harmony Heights Chorus | Ballad | 3:20 | Uptune | 2:40 | |
+| Chorus | 1 | Harmony Heights Chorus | Ballad | 3:20 | Lavender | Uptune | |
 | Quartet | 1 | Four Chord Quartet | Ballad | 2:50 | | | |
 
 - **Type**: `Chorus` or `Quartet`. The app shows one type at a time; pick it in the menu.
 - **Order**: order of appearance. The app sorts by it.
 - **Song count** is worked out from how many song titles are filled in.
 - **Length**: type `3:20`. Sheets may turn it into a time (3:20:00); the app reads that correctly. Keep every length cell in the same format, because Google drops odd-format cells when it exports a column.
+- **Lighting** (optional): the cue sheet color, such as `Blue` or `Light Pink`. It shows under the song name with a color dot. Leave blank for no special lighting.
 - Delete the `SAMPLE` rows before contest day.
 
 The sheet must be shared as **Anyone with the link → Viewer** for the phone to read it. Nobody can edit it that way, but anyone holding the link can view it.
