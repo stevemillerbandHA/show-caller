@@ -1,6 +1,6 @@
 // Offline cache for the app files. Serves from cache first, then refreshes the cache in the
 // background so a new version shows up on the next launch. Google Sheet requests pass through.
-const CACHE = 'showcaller-v3';
+const CACHE = 'showcaller-v5';
 const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 
 self.addEventListener('install', (e) => {

@@ -19,7 +19,6 @@ function load() {
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* fall through to defaults */ }
   s = s || {};
   s.sheetUrl = s.sheetUrl || DEFAULT_SHEET;
-  s.tab = s.tab || 'Sheet1';
   s.type = TYPES.includes(s.type) ? s.type : 'Chorus';
   s.data = s.data || { Chorus: [], Quartet: [] };
   s.syncedAt = s.syncedAt || null;
@@ -41,6 +40,11 @@ const current = () => list()[S.idx];
 function fmt(totalSeconds) {
   const s = Math.max(0, Math.round(totalSeconds));
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+// "#3" for a numbered slot, the text itself for a named one such as "Swan Set".
+function slot(order) {
+  return /^\d+(\.\d+)?$/.test(String(order)) ? '#' + order : String(order);
 }
 
 function esc(str) {
@@ -120,7 +124,7 @@ function tick() {
     if (!S.timers[key].endAt) continue;
     const [type, order, name] = key.split('|');
     if (type !== S.type || !c || order !== String(c.order) || name !== c.name) {
-      note = '▶ Timer running on #' + order;
+      note = '▶ Timer running on ' + slot(order);
       break;
     }
   }
@@ -150,7 +154,7 @@ function render(anim) {
   if (S.idx >= L.length) S.idx = Math.max(0, L.length - 1);
   const c = current();
 
-  $('#oa').textContent = c ? '#' + c.order : '';
+  $('#oa').textContent = c ? slot(c.order) : '';
   $('#cname').textContent = c ? c.name : 'No ' + S.type.toLowerCase() + 's loaded';
   $('#pos').textContent = c
     ? (S.idx + 1) + ' of ' + L.length + ' · ' + c.songs.length + ' song' + (c.songs.length === 1 ? '' : 's')
@@ -252,24 +256,19 @@ document.addEventListener('keydown', (e) => {
 
 function openMenu() {
   $('#sheetUrl').value = S.sheetUrl;
-  $('#tabName').value = S.tab;
   renderMenu();
   $('#menu').hidden = false;
 }
 
 function closeMenu() {
-  const url = $('#sheetUrl').value.trim();
-  const tab = $('#tabName').value.trim();
-  if (url) S.sheetUrl = url;
-  if (tab) S.tab = tab;
-  save();
+  saveSettings();
   $('#menu').hidden = true;
 }
 
 function renderMenu() {
   document.querySelectorAll('#typeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.type === S.type));
   $('#jumpList').innerHTML = list().map((c, i) =>
-    '<li><button data-i="' + i + '" class="' + (i === S.idx ? 'here' : '') + '">#' + esc(c.order) + '  ' + esc(c.name) + '</button></li>'
+    '<li><button data-i="' + i + '" class="' + (i === S.idx ? 'here' : '') + '">' + esc(slot(c.order)) + '  ' + esc(c.name) + '</button></li>'
   ).join('') || '<li class="muted">Nothing loaded yet.</li>';
   if (!$('#syncStatus').dataset.busy) setStatus(syncedText());
   updateWake();
@@ -326,11 +325,15 @@ function csvUrl() {
   if (/output=csv|format=csv|tqx=out:csv/.test(url)) return url;
   const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
   if (!m) throw new Error('The Google Sheet link in Settings does not look right.');
-  return 'https://docs.google.com/spreadsheets/d/' + m[1] + '/gviz/tq?tqx=out:csv&headers=1&sheet=' + encodeURIComponent(S.tab);
+  // The export feed returns cells exactly as displayed. (The gviz feed guesses a type per column
+  // and blanks cells that don't fit, which dropped "Swan Set" from a numbered Order column.)
+  // The tab comes from the link's gid; the first tab is gid 0.
+  const gid = (url.match(/[#&?]gid=(\d+)/) || [])[1] || '0';
+  return 'https://docs.google.com/spreadsheets/d/' + m[1] + '/export?format=csv&gid=' + gid;
 }
 
 async function sync() {
-  closeMenuFields();
+  saveSettings();
   const btn = $('#syncBtn');
   btn.disabled = true;
   $('#syncStatus').dataset.busy = '1';
@@ -350,7 +353,7 @@ async function sync() {
     } finally {
       clearTimeout(timeout);
     }
-    if (!res.ok) throw new Error('Google returned error ' + res.status + '. Check the tab name in Settings.');
+    if (!res.ok) throw new Error('Google returned error ' + res.status + '. Check the sheet link in Settings.');
     const text = await res.text();
     if (/^\s*</.test(text)) throw new Error('Got a web page instead of data. Share the sheet as “Anyone with the link → Viewer”.');
 
@@ -377,11 +380,9 @@ async function sync() {
   }
 }
 
-function closeMenuFields() {
+function saveSettings() {
   const url = $('#sheetUrl').value.trim();
-  const tab = $('#tabName').value.trim();
   if (url) S.sheetUrl = url;
-  if (tab) S.tab = tab;
   save();
 }
 
@@ -468,7 +469,13 @@ function parseSheet(text) {
     out[type].push({ order: orderRaw || String(ri + 1), name, songs });
   });
 
-  TYPES.forEach((t) => out[t].sort((a, b) => (parseFloat(a.order) || 0) - (parseFloat(b.order) || 0)));
+  // "Mic Tester" first, then numbered slots, then other text slots such as "Swan Set", in sheet row order.
+  const rank = (c) => {
+    if (/mic/i.test(c.order)) return -Infinity;
+    const n = parseFloat(c.order);
+    return isNaN(n) ? Infinity : n;
+  };
+  TYPES.forEach((t) => out[t].sort((a, b) => (rank(a) - rank(b)) || 0));
   return out;
 }
 
