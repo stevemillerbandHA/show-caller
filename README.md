@@ -44,4 +44,4 @@ To update later, upload the changed files to the repo the same way.
 
 ## Updating the app
 
-After changing any file, raise the version in `sw.js` (`showcaller-v2` → `showcaller-v3`) and redeploy. The phone picks up the new version on the second launch.
+After changing any file, raise `CACHE` in `sw.js` (for example `showcaller-v9` → `showcaller-v10`) and push. When the open app finds the new version, it shows **Update ready · tap to load** under the competitor name. It never reloads by itself, and running timers survive the reload. If `parseSheet` changes what it stores, also raise `DATA_VERSION` in `app.js`; the app then re-syncs on its own the next time it opens with signal.

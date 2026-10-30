@@ -8,6 +8,8 @@ const DEFAULT_SHEET = '';
 const KEY = 'showcaller.v1';
 const TYPES = ['Chorus', 'Quartet'];
 const WARN_SECONDS = 5;
+// Raise when parseSheet changes what it stores, so data synced by an older version is re-synced.
+const DATA_VERSION = 2;
 
 const $ = (sel) => document.querySelector(sel);
 const main = $('#songs');
@@ -363,6 +365,7 @@ async function sync() {
 
     const before = current();
     S.data = parsed;
+    S.dataVersion = DATA_VERSION;
     S.syncedAt = Date.now();
     // Stay on the same competitor if it is still there.
     const keep = before ? list().findIndex((c) => c.name === before.name) : -1;
@@ -503,17 +506,35 @@ function updateWake() {
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') { keepAwake(); tick(); }
+  if (document.visibilityState === 'visible') { keepAwake(); tick(); checkForUpdate(); }
 });
 document.addEventListener('touchend', keepAwake, { passive: true });
 document.addEventListener('click', keepAwake);
 
-// ---------- start ----------
+// ---------- app updates ----------
+// A new version takes over in the background. The app never reloads by itself (a timer may be
+// running); it shows an "Update ready" button instead. Timers survive the reload.
+
+function checkForUpdate() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.getRegistration().then((reg) => reg && reg.update()).catch(() => { /* offline */ });
+}
 
 if ('serviceWorker' in navigator) {
+  // The first takeover on a fresh install is not an update; any later one is.
+  let controlled = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (controlled) $('#updateBtn').hidden = false;
+    controlled = true;
+  });
   navigator.serviceWorker.register('sw.js').catch(() => { /* offline cache unavailable */ });
 }
+$('#updateBtn').addEventListener('click', () => location.reload());
+
+// ---------- start ----------
 
 render();
 keepAwake();
 setInterval(tick, 250);
+// Data synced by an older version may be stored in an older shape; refresh it while there is signal.
+if (S.syncedAt && S.dataVersion !== DATA_VERSION && S.sheetUrl) sync();
