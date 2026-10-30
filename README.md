@@ -37,7 +37,7 @@ To update later, upload the changed files to the repo the same way.
 
 - **☰ menu**: choose Chorus or Quartet, tap **Sync from Google Sheet**, jump to any competitor. Sync only when you have signal; everything is stored on the phone afterward.
 - **Swipe left/right**: next or previous competitor. All four bottom buttons go back to red.
-- **Start / Pause / Resume** each song timer. The song name and clock turn red at 0:05 and the timer stops at 0:00. **Reset** appears when a timer is paused or done.
+- **Start / Pause / Resume** each song timer. The song name and clock turn red at 0:05 and the timer stops at 0:00. A song with no length counts up from 0:00 instead (no red, no stop). **Reset** appears when a timer is paused or done.
 - A timer keeps running if you swipe away; the header shows "▶ Timer running on #N".
 - **Bottom buttons**: tap to turn green, tap again to turn back to red.
 - **Green dot** next to the menu button means the screen is being kept awake. If it is gray, tap anywhere.

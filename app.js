@@ -54,9 +54,13 @@ function esc(str) {
 }
 
 // ---------- timers ----------
-// Each timer is { endAt } while running or { leftMs } while paused/finished. No entry = not started.
+// A song with a length counts down: { endAt } while running, { leftMs } while paused/finished.
+// A song with no length counts up from 0:00: { startAt } while running, { elapsedMs } while paused.
+// No entry = not started.
 
 function timerKey(c, i) { return S.type + '|' + c.order + '|' + c.name + '|' + i; }
+
+const isRunning = (t) => !!(t && (t.endAt || t.startAt));
 
 function leftMs(key, song) {
   const t = S.timers[key];
@@ -65,12 +69,21 @@ function leftMs(key, song) {
   return t.leftMs;
 }
 
+function elapsedMs(key) {
+  const t = S.timers[key];
+  if (!t) return 0;
+  if (t.startAt) return Date.now() - t.startAt;
+  return t.elapsedMs || 0;
+}
+
 function toggleTimer(i) {
   const c = current();
   const song = c.songs[i];
   const key = timerKey(c, i);
   const t = S.timers[key];
-  if (t && t.endAt) {
+  if (!song.len) {
+    S.timers[key] = isRunning(t) ? { elapsedMs: elapsedMs(key) } : { startAt: Date.now() - elapsedMs(key) };
+  } else if (t && t.endAt) {
     S.timers[key] = { leftMs: Math.max(0, t.endAt - Date.now()) };
   } else {
     const ms = leftMs(key, song);
@@ -107,15 +120,21 @@ function tick() {
       const song = c.songs[i];
       const key = timerKey(c, i);
       const t = S.timers[key];
-      const secs = Math.ceil(leftMs(key, song) / 1000);
-      const running = !!(t && t.endAt);
+      const running = isRunning(t);
       const go = card.querySelector('.go');
 
-      card.querySelector('.clock').textContent = song.len ? fmt(secs) : '--:--';
-      card.classList.toggle('warn', !!t && secs <= WARN_SECONDS);
+      if (song.len) {
+        const secs = Math.ceil(leftMs(key, song) / 1000);
+        card.querySelector('.clock').textContent = fmt(secs);
+        card.classList.toggle('warn', !!t && secs <= WARN_SECONDS);
+        go.disabled = !!t && !running && secs <= 0;
+        go.textContent = running ? 'Pause' : !t ? 'Start' : secs <= 0 ? 'Done' : 'Resume';
+      } else {
+        card.querySelector('.clock').textContent = fmt(Math.floor(elapsedMs(key) / 1000));
+        go.disabled = false;
+        go.textContent = running ? 'Pause' : !t ? 'Start' : 'Resume';
+      }
       go.classList.toggle('running', running);
-      go.disabled = !song.len || (!!t && !running && secs <= 0);
-      go.textContent = running ? 'Pause' : !t ? 'Start' : secs <= 0 ? 'Done' : 'Resume';
       card.querySelector('.reset').classList.toggle('off', !t || running);
     });
   }
@@ -123,7 +142,7 @@ function tick() {
   // Flag a timer still running on another competitor (for example after an accidental swipe).
   let note = '';
   for (const key in S.timers) {
-    if (!S.timers[key].endAt) continue;
+    if (!isRunning(S.timers[key])) continue;
     const [type, order, name] = key.split('|');
     if (type !== S.type || !c || order !== String(c.order) || name !== c.name) {
       note = '▶ Timer running on ' + slot(order);
@@ -167,7 +186,7 @@ function render(anim) {
   } else {
     main.innerHTML = c.songs.map((song, i) =>
       '<section class="song" data-i="' + i + '">' +
-        '<div class="song-head">Song ' + (i + 1) + ' · Length ' + (song.len ? fmt(song.len) : 'not set') + '</div>' +
+        '<div class="song-head">Song ' + (i + 1) + ' · ' + (song.len ? 'Length ' + fmt(song.len) : 'No length · counts up') + '</div>' +
         '<div class="song-title">' + esc(song.title) + '</div>' +
         (song.light ? lightChip(song.light) : '') +
         '<div class="controls">' +
